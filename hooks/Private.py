@@ -9,3 +9,4 @@ def main(repo_topdir=None, **kwargs):
       kwargs: Leave this here for forward-compatibility.
     """
     print(f"Post-sync hook executed in repo at {repo_topdir}")
+    print("This is the podman_setting post-sync hook.")
