@@ -2,6 +2,7 @@
 import os
 import subprocess
 import getpass
+import shutil
 
 
 def main(repo_topdir=None, **kwargs):
@@ -23,6 +24,11 @@ def main(repo_topdir=None, **kwargs):
     HOOK_FILENAME = {"post-sync": "post-sync.py", "None": "None"}
     os.chdir(PODMAN_HOOK_ROOT)
 
+    filename = "smb-user.conf"
+    shutil.copyfile(
+        f"{PODMAN_HOOK_ROOT}/file/{filename}",
+        f"{repo_topdir}/podman/file/samba/config/{filename}",
+    )
     subprocess.run(
         [
             "python3",
@@ -30,6 +36,3 @@ def main(repo_topdir=None, **kwargs):
             f"{repo_topdir}/podman/file",
         ]
     )
-
-    # script4podman_file = runpy.run_path("file/" + HOOK_FILENAME["post-sync"])
-    # script4podman_file["main"](repo_topdir)
