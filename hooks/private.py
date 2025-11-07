@@ -24,7 +24,7 @@ def main(repo_topdir=None, **kwargs):
     HOOK_FILENAME = {"post-sync": "post-sync.py", "None": "None"}
     os.chdir(PODMAN_HOOK_ROOT)
 
-    filename = "smb-user.conf"
+    filename = "smb-include.conf"
     shutil.copyfile(
         f"{PODMAN_HOOK_ROOT}/file/{filename}",
         f"{repo_topdir}/podman/file/samba/config/{filename}",
