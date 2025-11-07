@@ -27,7 +27,7 @@ def main(repo_topdir=None, **kwargs):
     filename = "smb-include.conf"
     shutil.copyfile(
         f"{PODMAN_HOOK_ROOT}/file/{filename}",
-        f"{repo_topdir}/podman/file/samba/{filename}",
+        f"{repo_topdir}/podman/file/samba/config/{filename}",
     )
     subprocess.run(
         [
