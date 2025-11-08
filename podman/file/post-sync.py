@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from pathlib import Path
 import getpass, os, shutil, subprocess, sys
+import configparser
 
 SYSTEMD_DIR = f"/home/{getpass.getuser()}/.config/containers/systemd"
 
@@ -31,8 +32,7 @@ class systemdInstance:
         self.artifacts = []
         self.unknowns = []
 
-    def setService(self, name):
-        serviceType = os.path.splitext(name)[-1][1:]
+    def setService(self, serviceType, name):
         if serviceType == "container":
             self.containers.append(name)
         elif serviceType == "pod":
@@ -59,15 +59,15 @@ class systemdInstance:
 
     def startPod(self, podName):
         print(f"Starting pod: {podName}...")
-        subprocess.run(["systemctl", "--user", "start", podName])
+        subprocess.run(["systemctl", "--user", "restart", podName])
 
     def startContainer(self, containerName):
         print(f"Starting container: {containerName}...")
-        subprocess.run(["systemctl", "--user", "start", containerName])
+        subprocess.run(["systemctl", "--user", "restart", containerName])
 
     def startBuild(self, buildName):
         print(f"Starting build: {buildName}...")
-        subprocess.run(["systemctl", "--user", "start", buildName])
+        subprocess.run(["systemctl", "--user", "restart", buildName])
 
     def startAllPod(self):
         for podName in self.pods:
@@ -90,13 +90,20 @@ def mainProcess(dir, systemd, launchedFromRepo):
         launchedFromRepo (bool): repo経由か否かを判別
     """
     print("This is the hook for file pod.")
+    cf = configparser.ConfigParser(strict=False)
     td = TargetDir(dir)
     p = td.getPath(launchedFromRepo)
     pod_path = list(Path(p).rglob("Quadlet/*"))
     for i in pod_path:
-        shutil.copyfile(i.resolve(), f"{SYSTEMD_DIR}/{i.name}")
         print(f"copy {i.name} to {SYSTEMD_DIR}")
-        systemd.setService(i.name)
+        shutil.copyfile(i.resolve(), f"{SYSTEMD_DIR}/{i.name}")
+        # 拡張子を取得
+        type = os.path.splitext(i.name)[-1][1:]
+        print(f"file is {SYSTEMD_DIR}/{i.name}")
+        cf.read(f"{SYSTEMD_DIR}/{i.name}")
+
+        # systemdに登録
+        systemd.setService(type, cf.get(type.capitalize(), "ServiceName"))
 
 
 def main(repo_topdir=None, **kwargs):
