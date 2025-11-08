@@ -20,6 +20,44 @@ class TargetDir:
         return ret
 
 
+class serviceFile:
+    def __init__(self, path="", workDir=""):
+        cf = configparser.ConfigParser(strict=False)
+        cf.read(path)
+
+        self.path = path
+        self.ext = os.path.splitext(self.path)[-1][1:]
+        self.serviceType = cf.get(self.ext.capitalize(), "ServiceName")
+
+    def getServiceType(self):
+        return self.serviceType
+
+    def getPath(self):
+        return self.path
+
+    def getExt(self):
+        return self.ext
+
+    def applyChanges(self, appendFile):
+        if not os.path.exists(appendFile):
+            print(f"append file {appendFile} not found, skipping...")
+            return
+        with open(self.path, "a") as ServiceFile:
+            with open(appendFile, "r") as appendFile:
+                ServiceFile.write(f"# Added by podman file post-sync hook\n")
+                ServiceFile.write(f"\n")
+                for line in appendFile:
+                    ServiceFile.write(line)
+
+    def changeWorkingDirectoryInBuildService(self, dirPath):
+        with open(self.path, "a") as ServiceFile:
+            ServiceFile.write(f"\n")
+            ServiceFile.write(f"# Added by podman file post-sync hook\n")
+            ServiceFile.write(f"[{self.ext.capitalize()}]\n")
+            ServiceFile.write(f"SetWorkingDirectory={dirPath}\n")
+        pass
+
+
 class systemdInstance:
     def __init__(self):
         self.containers = []
@@ -32,26 +70,26 @@ class systemdInstance:
         self.artifacts = []
         self.unknowns = []
 
-    def setService(self, serviceType, name):
-        if serviceType == "container":
-            self.containers.append(name)
-        elif serviceType == "pod":
-            self.pods.append(name)
-        elif serviceType == "kube":
-            self.kubes.append(name)
-        elif serviceType == "network":
-            self.networks.append(name)
-        elif serviceType == "volume":
-            self.volumes.append(name)
-        elif serviceType == "build":
-            self.builds.append(name)
-        elif serviceType == "image":
-            self.images.append(name)
-        elif serviceType == "artifact":
-            self.artifacts.append(name)
+    def setService(self, ext, serviceName):
+        if ext == "container":
+            self.containers.append(serviceName)
+        elif ext == "pod":
+            self.pods.append(serviceName)
+        elif ext == "kube":
+            self.kubes.append(serviceName)
+        elif ext == "network":
+            self.networks.append(serviceName)
+        elif ext == "volume":
+            self.volumes.append(serviceName)
+        elif ext == "build":
+            self.builds.append(serviceName)
+        elif ext == "image":
+            self.images.append(serviceName)
+        elif ext == "artifact":
+            self.artifacts.append(serviceName)
         else:
-            self.unknowns.append(name)
-            print(f"unknown service type: {name}")
+            self.unknowns.append(serviceName)
+            print(f"unknown extension: {ext} for service {serviceName}")
 
     def reload(self):
         print("Reloading systemd user daemon...")
@@ -69,15 +107,15 @@ class systemdInstance:
         print(f"Starting build: {buildName}...")
         subprocess.run(["systemctl", "--user", "restart", buildName])
 
-    def startAllPod(self):
+    def startAllPods(self):
         for podName in self.pods:
             self.startPod(podName)
 
-    def startAllContainer(self):
+    def startAllContainers(self):
         for containerName in self.containers:
             self.startContainer(containerName)
 
-    def startAllBuild(self):
+    def startAllBuilds(self):
         for buildName in self.builds:
             self.startBuild(buildName)
 
@@ -90,20 +128,20 @@ def mainProcess(dir, systemd, launchedFromRepo):
         launchedFromRepo (bool): repo経由か否かを判別
     """
     print("This is the hook for file pod.")
-    cf = configparser.ConfigParser(strict=False)
+
     td = TargetDir(dir)
     p = td.getPath(launchedFromRepo)
-    pod_path = list(Path(p).rglob("Quadlet/*"))
-    for i in pod_path:
+    quadletFile_path = list(Path(p).rglob("Quadlet/*"))
+    for i in quadletFile_path:
         print(f"copy {i.name} to {SYSTEMD_DIR}")
         shutil.copyfile(i.resolve(), f"{SYSTEMD_DIR}/{i.name}")
-        # 拡張子を取得
-        type = os.path.splitext(i.name)[-1][1:]
-        print(f"file is {SYSTEMD_DIR}/{i.name}")
-        cf.read(f"{SYSTEMD_DIR}/{i.name}")
 
         # systemdに登録
-        systemd.setService(type, cf.get(type.capitalize(), "ServiceName"))
+        file = serviceFile(f"{SYSTEMD_DIR}/{i.name}")
+        if file.getExt() == "build":
+            file.changeWorkingDirectoryInBuildService(p)
+        file.applyChanges(f"{os.path.dirname(__file__)}/Quadlet/{i.name}")
+        systemd.setService(file.ext, file.serviceType)
 
 
 def main(repo_topdir=None, **kwargs):
@@ -119,7 +157,8 @@ def main(repo_topdir=None, **kwargs):
     si = systemdInstance()
     mainProcess(repo_topdir, si, True)
     si.reload()
-    si.startAllPod()
+    si.startAllBuilds()
+    si.startAllPods()
 
 
 if __name__ == "__main__":
@@ -127,4 +166,5 @@ if __name__ == "__main__":
     si = systemdInstance()
     mainProcess(sys.argv[1], si, False)
     si.reload()
-    si.startAllPod()
+    si.startAllBuilds()
+    si.startAllPods()
