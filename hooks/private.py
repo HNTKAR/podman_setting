@@ -19,16 +19,22 @@ def main(repo_topdir=None, **kwargs):
     print("This is the podman_setting post-sync hook.")
 
     print(f"user name is {getpass.getuser()}")
-
+    if not repo_topdir:
+        print("repo_topdir is None, exiting.")
+        return
+    
     PODMAN_HOOK_ROOT = repo_topdir + "/setting/podman"
     HOOK_FILENAME = {"post-sync": "post-sync.py", "None": "None"}
     os.chdir(PODMAN_HOOK_ROOT)
+    
+    # copy multiple files for file-pod 
 
-    filename = "smb-include.conf"
-    shutil.copyfile(
-        f"{PODMAN_HOOK_ROOT}/file/{filename}",
-        f"{repo_topdir}/podman/file/samba/config/{filename}",
-    )
+    filenames = ["smb-include.conf"]
+    for filename in filenames:
+        shutil.copyfile(
+            f"{PODMAN_HOOK_ROOT}/file/{filename}",
+            f"{repo_topdir}/podman/file/samba/config/{filename}",
+        )
     subprocess.run(
         [
             "python3",

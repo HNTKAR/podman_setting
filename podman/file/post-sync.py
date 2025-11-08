@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from pathlib import Path
-import os, sys, getpass, shutil
+import getpass, os, shutil, subprocess, sys
 
 SYSTEMD_DIR = f"/home/{getpass.getuser()}/.config/containers/systemd"
 
@@ -19,7 +19,70 @@ class TargetDir:
         return ret
 
 
-def mainProcess(dir, launchedFromRepo):
+class systemdInstance:
+    def __init__(self):
+        self.containers = []
+        self.pods = []
+        self.kubes = []
+        self.networks = []
+        self.volumes = []
+        self.builds = []
+        self.images = []
+        self.artifacts = []
+        self.unknowns = []
+
+    def setService(self, name):
+        serviceType = os.path.splitext(name)[-1][1:]
+        if serviceType == "container":
+            self.containers.append(name)
+        elif serviceType == "pod":
+            self.pods.append(name)
+        elif serviceType == "kube":
+            self.kubes.append(name)
+        elif serviceType == "network":
+            self.networks.append(name)
+        elif serviceType == "volume":
+            self.volumes.append(name)
+        elif serviceType == "build":
+            self.builds.append(name)
+        elif serviceType == "image":
+            self.images.append(name)
+        elif serviceType == "artifact":
+            self.artifacts.append(name)
+        else:
+            self.unknowns.append(name)
+            print(f"unknown service type: {name}")
+
+    def reload(self):
+        print("Reloading systemd user daemon...")
+        subprocess.run(["systemctl", "--user", "daemon-reload"])
+
+    def startPod(self, podName):
+        print(f"Starting pod: {podName}...")
+        subprocess.run(["systemctl", "--user", "start", podName])
+
+    def startContainer(self, containerName):
+        print(f"Starting container: {containerName}...")
+        subprocess.run(["systemctl", "--user", "start", containerName])
+
+    def startBuild(self, buildName):
+        print(f"Starting build: {buildName}...")
+        subprocess.run(["systemctl", "--user", "start", buildName])
+
+    def startAllPod(self):
+        for podName in self.pods:
+            self.startPod(podName)
+
+    def startAllContainer(self):
+        for containerName in self.containers:
+            self.startContainer(containerName)
+
+    def startAllBuild(self):
+        for buildName in self.builds:
+            self.startBuild(buildName)
+
+
+def mainProcess(dir, systemd, launchedFromRepo):
     """個人向け設定反映用プログラム
 
     Args:
@@ -33,6 +96,7 @@ def mainProcess(dir, launchedFromRepo):
     for i in pod_path:
         shutil.copyfile(i.resolve(), f"{SYSTEMD_DIR}/{i.name}")
         print(f"copy {i.name} to {SYSTEMD_DIR}")
+        systemd.setService(i.name)
 
 
 def main(repo_topdir=None, **kwargs):
@@ -45,9 +109,15 @@ def main(repo_topdir=None, **kwargs):
       kwargs: Leave this here for forward-compatibility.
     """
     print(f"Post-sync hook executed in repo at {repo_topdir}")
-    mainProcess(repo_topdir, True)
+    si = systemdInstance()
+    mainProcess(repo_topdir, si, True)
+    si.reload()
+    si.startAllPod()
 
 
 if __name__ == "__main__":
     print(f"main ok->{sys.argv[1]}")
-    mainProcess(sys.argv[1], False)
+    si = systemdInstance()
+    mainProcess(sys.argv[1], si, False)
+    si.reload()
+    si.startAllPod()
