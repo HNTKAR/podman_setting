@@ -22,23 +22,26 @@ def main(repo_topdir=None, **kwargs):
     if not repo_topdir:
         print("repo_topdir is None, exiting.")
         return
-    
-    PODMAN_HOOK_ROOT = repo_topdir + "/setting/podman"
-    HOOK_FILENAME = {"post-sync": "post-sync.py", "None": "None"}
-    os.chdir(PODMAN_HOOK_ROOT)
-    
-    # copy multiple files for file-pod 
+
+    HookRoot = os.path.join(repo_topdir, "setup", "podman", "hooks")
+
+    os.chdir(HookRoot)
+    env = os.environ.copy()
+    env["PYTHONPATH"] = f"{repo_topdir}/setup/podman/hooks:{env.get("PYTHONPATH", "")}"
+
+    # copy multiple files for file-pod
 
     filenames = ["smb-include.conf"]
     for filename in filenames:
         shutil.copyfile(
-            f"{PODMAN_HOOK_ROOT}/file/{filename}",
+            f"{HookRoot}/file/{filename}",
             f"{repo_topdir}/podman/file/samba/config/{filename}",
         )
     subprocess.run(
         [
             "python3",
-            PODMAN_HOOK_ROOT + "/file/" + HOOK_FILENAME["post-sync"],
+            f"{HookRoot}/applyChange.py",
             f"{repo_topdir}/podman/file",
-        ]
+        ],
+        env=env,
     )
