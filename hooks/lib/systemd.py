@@ -1,6 +1,7 @@
 import os
 import subprocess
 import configparser
+import getpass
 from pathlib import Path
 
 
@@ -37,21 +38,27 @@ class sysemctlCommand:
             self.unknowns.append(serviceName)
             print(f"unknown extension: {ext} for service {serviceName}")
 
+    def getCommand(self, command: list):
+        prefix = ["systemctl"]
+        if getpass.getuser() != "root":
+            prefix += ["--user"]
+        return prefix + command
+
     def reload(self):
         print("Reloading systemd user daemon...")
-        subprocess.run(["systemctl", "--user", "daemon-reload"])
+        subprocess.run(self.getCommand(["daemon-reload"]))
 
     def startPod(self, podName):
         print(f"Starting pod: {podName}...")
-        subprocess.run(["systemctl", "--user", "restart", podName])
+        subprocess.run(self.getCommand(["restart", podName]))
 
     def startContainer(self, containerName):
         print(f"Starting container: {containerName}...")
-        subprocess.run(["systemctl", "--user", "restart", containerName])
+        subprocess.run(self.getCommand(["restart", containerName]))
 
     def startBuild(self, buildName):
         print(f"Starting build: {buildName}...")
-        subprocess.run(["systemctl", "--user", "restart", buildName])
+        subprocess.run(self.getCommand(["restart", buildName]))
 
     def startAllPods(self):
         for podName in self.pods:

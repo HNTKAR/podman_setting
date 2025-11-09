@@ -1,6 +1,3 @@
-import os
-import subprocess
-import configparser
 from pathlib import Path
 from lib.utils import dirManager
 from lib.systemd import sysemctlCommand, unitFile

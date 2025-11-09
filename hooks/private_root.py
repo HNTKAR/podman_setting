@@ -23,25 +23,35 @@ def main(repo_topdir=None, **kwargs):
         print("repo_topdir is None, exiting.")
         return
 
-    HookRoot = os.path.join(repo_topdir, "setup", "podman", "hooks")
+    HookDir = os.path.join(repo_topdir, "setup", "podman", "hooks")
+    PodmanDir = os.path.join(repo_topdir, "setup", "podman", "podman")
 
-    os.chdir(HookRoot)
+    os.chdir(HookDir)
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{repo_topdir}/setup/podman/hooks:{env.get("PYTHONPATH", "")}"
+    env["PYTHONPATH"] = f"{HookDir}:{env.get("PYTHONPATH", "")}"
 
-    # copy multiple files for file-pod
+    
+    # copy multiple files for vpn-pod
 
-    filenames = ["smb-include.conf"]
+    filenames = []
+    dir="vpn"
+    container="wireguard"
     for filename in filenames:
         shutil.copyfile(
-            f"{HookRoot}/file/{filename}",
-            f"{repo_topdir}/podman/file/samba/config/{filename}",
+            f"{PodmanDir}/{dir}/{filename}",
+            f"{repo_topdir}/podman/{dir}/{container}/config/{filename}",
         )
     subprocess.run(
         [
+            "sudo", 
             "python3",
-            f"{HookRoot}/applyChange.py",
-            f"{repo_topdir}/podman/file",
+            f"{HookDir}/applyChange.py",
+            f"--repoPath",
+            f"{repo_topdir}/podman/{dir}",
+            f"--appendPath",
+            f"{PodmanDir}/{dir}",
+            f"--systemctl",
+            f"bp",
         ],
         env=env,
     )
