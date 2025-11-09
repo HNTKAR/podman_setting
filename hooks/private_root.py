@@ -3,6 +3,7 @@ import os
 import subprocess
 import getpass
 import shutil
+import sys
 
 
 def main(repo_topdir=None, **kwargs):
@@ -55,3 +56,6 @@ def main(repo_topdir=None, **kwargs):
         ],
         env=env,
     )
+    
+if __name__ == "__main__":
+    main(sys.argv[1])
