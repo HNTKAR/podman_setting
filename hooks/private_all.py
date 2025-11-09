@@ -1,0 +1,20 @@
+#!/usr/bin/env python
+import private_root as pr
+import private_user as pu
+
+
+def main(repo_topdir=None, **kwargs):
+    """Main function invoked directly by repo.
+
+    We must use the name "main" as that is what repo requires.
+
+    Args:
+      repo_topdir: The absolute path to the top-level directory of the repo workspace.
+      kwargs: Leave this here for forward-compatibility.
+    """
+
+    print(f"Post-sync hook executed in repo at {repo_topdir}")
+    print("This is the podman_setting post-sync hook.")
+
+    pr.main(repo_topdir=repo_topdir)
+    pu.main(repo_topdir=repo_topdir)
