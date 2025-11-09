@@ -1,9 +1,8 @@
 import os
 import subprocess
 import configparser
+import getpass
 from pathlib import Path
-from lib.utils import dirManager
-import shutil
 
 
 class sysemctlCommand:
@@ -39,21 +38,27 @@ class sysemctlCommand:
             self.unknowns.append(serviceName)
             print(f"unknown extension: {ext} for service {serviceName}")
 
+    def getCommand(self, command: list):
+        prefix = ["systemctl"]
+        if getpass.getuser() != "root":
+            prefix += ["--user"]
+        return prefix + command
+
     def reload(self):
         print("Reloading systemd user daemon...")
-        subprocess.run(["systemctl", "--user", "daemon-reload"])
+        subprocess.run(self.getCommand(["daemon-reload"]))
 
     def startPod(self, podName):
         print(f"Starting pod: {podName}...")
-        subprocess.run(["systemctl", "--user", "restart", podName])
+        subprocess.run(self.getCommand(["restart", podName]))
 
     def startContainer(self, containerName):
         print(f"Starting container: {containerName}...")
-        subprocess.run(["systemctl", "--user", "restart", containerName])
+        subprocess.run(self.getCommand(["restart", containerName]))
 
     def startBuild(self, buildName):
         print(f"Starting build: {buildName}...")
-        subprocess.run(["systemctl", "--user", "restart", buildName])
+        subprocess.run(self.getCommand(["restart", buildName]))
 
     def startAllPods(self):
         for podName in self.pods:
@@ -103,28 +108,3 @@ class unitFile:
             ServiceFile.write(f"# Added by podman file post-sync hook\n")
             ServiceFile.write(f"[{self.ext.capitalize()}]\n")
             ServiceFile.write(f"SetWorkingDirectory={dirPath}\n")
-
-
-class setup:
-    def __init__(self, dir: Path, launchedFromRepo: bool):
-        self.dir = dir
-        self.launchedFromRepo = launchedFromRepo
-
-    def copyQuadletFile(self, systemd: sysemctlCommand,appendPath:Path):
-        print("This is the hook for pod.")
-
-        dManager = dirManager(self.dir, self.launchedFromRepo)
-        path = dManager.getTargetDir()
-        print(f"path -> {path}")
-        quadletFile_path = list(Path(path).rglob("Quadlet/*"))
-        for i in quadletFile_path:
-            print(f"copy {i.name} to {dManager.getQuadletDir()}")
-            shutil.copyfile(i.resolve(), f"{dManager.getQuadletDir()}/{i.name}")
-
-            # systemdに登録
-            f = unitFile(Path(f"{dManager.getQuadletDir()}/{i.name}"))
-            if f.getExt() == "build":
-                f.changeWorkingDirectoryInBuildService(path)
-            print(f"test {appendPath.absolute()}/Quadlet/{i.name}")
-            f.appendPersonalChanges(f"{appendPath.absolute()}/Quadlet/{i.name}")
-            systemd.setService(f.ext, f.serviceType)

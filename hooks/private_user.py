@@ -33,43 +33,46 @@ def main(repo_topdir=None, **kwargs):
     # copy multiple files for file-pod
 
     filenames = ["smb-include.conf"]
+    dir = "file"
+    container = "samba"
     for filename in filenames:
         shutil.copyfile(
-            f"{PodmanDir}/file/{filename}",
-            f"{repo_topdir}/podman/file/samba/config/{filename}",
+            f"{PodmanDir}/{dir}/{filename}",
+            f"{repo_topdir}/podman/{dir}/{container}/config/{filename}",
         )
     subprocess.run(
         [
             "python3",
             f"{HookDir}/applyChange.py",
             f"--repoPath",
-            f"{repo_topdir}/podman/file",
+            f"{repo_topdir}/podman/{dir}",
             f"--appendPath",
-            f"{PodmanDir}/file",
+            f"{PodmanDir}/{dir}",
             f"--systemctl",
-            f"bp"
+            f"bp",
         ],
         env=env,
     )
-    
+
     # copy multiple files for certbot
 
     filenames = []
+    dir = "certbot"
     for filename in filenames:
         shutil.copyfile(
-            f"{PodmanDir}/file/{filename}",
-            f"{repo_topdir}/podman/certbot/config/{filename}",
+            f"{PodmanDir}/{dir}/{filename}",
+            f"{repo_topdir}/podman/{dir}/config/{filename}",
         )
     subprocess.run(
         [
             "python3",
             f"{HookDir}/applyChange.py",
             f"--repoPath",
-            f"{repo_topdir}/podman/certbot",
+            f"{repo_topdir}/podman/{dir}",
             f"--appendPath",
-            f"{PodmanDir}/certbot",
+            f"{PodmanDir}/{dir}",
             f"--systemctl",
-            f"bc"
+            f"bp",
         ],
         env=env,
     )
