@@ -2,8 +2,6 @@ import os
 import subprocess
 import configparser
 from pathlib import Path
-from lib.utils import dirManager
-import shutil
 
 
 class sysemctlCommand:
@@ -103,28 +101,3 @@ class unitFile:
             ServiceFile.write(f"# Added by podman file post-sync hook\n")
             ServiceFile.write(f"[{self.ext.capitalize()}]\n")
             ServiceFile.write(f"SetWorkingDirectory={dirPath}\n")
-
-
-class setup:
-    def __init__(self, dir: Path, launchedFromRepo: bool):
-        self.dir = dir
-        self.launchedFromRepo = launchedFromRepo
-
-    def copyQuadletFile(self, systemd: sysemctlCommand,appendPath:Path):
-        print("This is the hook for pod.")
-
-        dManager = dirManager(self.dir, self.launchedFromRepo)
-        path = dManager.getTargetDir()
-        print(f"path -> {path}")
-        quadletFile_path = list(Path(path).rglob("Quadlet/*"))
-        for i in quadletFile_path:
-            print(f"copy {i.name} to {dManager.getQuadletDir()}")
-            shutil.copyfile(i.resolve(), f"{dManager.getQuadletDir()}/{i.name}")
-
-            # systemdに登録
-            f = unitFile(Path(f"{dManager.getQuadletDir()}/{i.name}"))
-            if f.getExt() == "build":
-                f.changeWorkingDirectoryInBuildService(path)
-            print(f"test {appendPath.absolute()}/Quadlet/{i.name}")
-            f.appendPersonalChanges(f"{appendPath.absolute()}/Quadlet/{i.name}")
-            systemd.setService(f.ext, f.serviceType)
