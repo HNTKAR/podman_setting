@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import private_root as pr
-import private_user as pu
+import os
+import subprocess
 
 
 def main(repo_topdir=None, **kwargs):
@@ -16,5 +16,6 @@ def main(repo_topdir=None, **kwargs):
     print(f"Post-sync hook executed in repo at {repo_topdir}")
     print("This is the podman_setting post-sync hook.")
 
-    pr.main(repo_topdir=repo_topdir)
-    pu.main(repo_topdir=repo_topdir)
+    path = os.path.dirname(__file__)
+    subprocess.run(["python3", f"{path}/hooks/private_user.py", f"{repo_topdir}"])
+    subprocess.run(["python3", f"{path}/hooks/private_root.py", f"{repo_topdir}"])
