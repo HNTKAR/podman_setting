@@ -51,3 +51,25 @@ def main(repo_topdir=None, **kwargs):
         ],
         env=env,
     )
+    
+    # copy multiple files for certbot
+
+    filenames = []
+    for filename in filenames:
+        shutil.copyfile(
+            f"{PodmanDir}/file/{filename}",
+            f"{repo_topdir}/podman/certbot/config/{filename}",
+        )
+    subprocess.run(
+        [
+            "python3",
+            f"{HookDir}/applyChange.py",
+            f"--repoPath",
+            f"{repo_topdir}/podman/certbot",
+            f"--appendPath",
+            f"{PodmanDir}/certbot",
+            f"--systemctl",
+            f"bc"
+        ],
+        env=env,
+    )
