@@ -10,6 +10,8 @@ def main(args):
     commands: str = args.systemctl
     s = setup(repoPath, False)
     s.setupQuadletFiles(appendPath)
+    s.setupSystemdFiles(appendPath)
+    s.reload()
     print(f"command is {commands}")
     for i in commands:
         match i:
