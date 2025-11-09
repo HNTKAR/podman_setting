@@ -74,13 +74,25 @@ class sysemctlCommand:
 
 
 class unitFile:
+    quadlet_ext = [
+        "container",
+        "pod",
+        "kube",
+        "network",
+        "volume",
+        "build",
+        "image",
+        "artifact",
+    ]
+
     def __init__(self, path: Path):
         cf = configparser.ConfigParser(strict=False)
         cf.read(path)
 
         self.path = path
         self.ext = os.path.splitext(self.path)[-1][1:]
-        self.serviceType = cf.get(self.ext.capitalize(), "ServiceName")
+        if self.ext in self.quadlet_ext:
+            self.serviceType = cf.get(self.ext.capitalize(), "ServiceName")
 
     def getServiceType(self):
         return self.serviceType

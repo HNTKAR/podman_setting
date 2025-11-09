@@ -15,6 +15,16 @@ class setup(sysemctlCommand):
         path = self.dManager.getTargetDir()
         return list(Path(path).rglob("Quadlet/*"))
 
+    def searchSystemdFiles(self):
+        path = self.dManager.getTargetDir()
+        return list(Path(path).rglob("Systemd/*"))
+
+    def modifySystemdFiles(self, sFiles: list[Path], appendPath: Path):
+        for i in sFiles:
+            # systemdに登録
+            f = unitFile(Path(f"{self.dManager.getSystemdDir()}/{i.name}"))
+            f.appendPersonalChanges(f"{appendPath.resolve()}/Systemd/{i.name}")
+
     def modifyQuadletFiles(self, qFiles: list[Path], appendPath: Path):
         for i in qFiles:
             # systemdに登録
@@ -34,10 +44,21 @@ class setup(sysemctlCommand):
             print(f"copy {i.name} to {self.dManager.getQuadletDir()}")
             shutil.copyfile(i.resolve(), f"{self.dManager.getQuadletDir()}/{i.name}")
 
+    def copySystemdFile(self, sFiles: list[Path]):
+        for i in sFiles:
+            # ファイルをコピー
+            print(f"copy {i.name} to {self.dManager.getSystemdDir()}")
+            shutil.copyfile(i.resolve(), f"{self.dManager.getSystemdDir()}/{i.name}")
+
     def setupQuadletFiles(self, appendPath: Path):
-        print("This is the hook for pod.")
+        print("This is the hook for Quadlet.")
         quadletFiles = self.searchQuadletFiles()
         self.copyQuadletFile(quadletFiles)
         self.modifyQuadletFiles(quadletFiles, appendPath)
         self.updateUnitFileLists(quadletFiles)
-        self.reload()
+
+    def setupSystemdFiles(self, appendPath: Path):
+        print("This is the hook for systemd.")
+        systemdFiles = self.searchSystemdFiles()
+        self.copySystemdFile(systemdFiles)
+        self.modifySystemdFiles(systemdFiles, appendPath)

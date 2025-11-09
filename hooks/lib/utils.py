@@ -34,3 +34,9 @@ class dirManager:
         if getpass.getuser() == "root":
             path = Path(f"/etc/containers/systemd")
         return path
+
+    def getSystemdDir(self):
+        path = Path(f"/home/{getpass.getuser()}/.config/systemd/user")
+        if getpass.getuser() == "root":
+            path = Path(f"/usr/local/lib/systemd/system/")
+        return path
