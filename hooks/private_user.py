@@ -72,7 +72,7 @@ def main(repo_topdir=None, **kwargs):
             f"--appendPath",
             f"{PodmanDir}/{dir}",
             f"--systemctl",
-            f"bp",
+            f"bc",
         ],
         env=env,
     )
