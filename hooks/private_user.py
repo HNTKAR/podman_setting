@@ -54,26 +54,26 @@ def main(repo_topdir=None, **kwargs):
         ],
         env=env,
     )
-    # container = "nginx"
-    # filenames = ["h-sample_3birds_uk.conf","s-test.conf"]
-    # for filename in filenames:
-    #     shutil.copyfile(
-    #         f"{PodmanDir}/{dir}/{filename}",
-    #         f"{repo_topdir}/podman/{dir}/{container}/config/{filename}",
-    #     )
-    # subprocess.run(
-    #     [
-    #         "python3",
-    #         f"{HookDir}/applyChange.py",
-    #         f"--repoPath",
-    #         f"{repo_topdir}/podman/{dir}",
-    #         f"--appendPath",
-    #         f"{PodmanDir}/{dir}",
-    #         f"--systemctl",
-    #         f"bp",
-    #     ],
-    #     env=env,
-    # )
+    container = "nginx"
+    filenames = ["h-sample_3birds_uk.conf","m-test.conf"]
+    for filename in filenames:
+        shutil.copyfile(
+            f"{PodmanDir}/{dir}/{filename}",
+            f"{repo_topdir}/podman/{dir}/{container}/config/{filename}",
+        )
+    subprocess.run(
+        [
+            "python3",
+            f"{HookDir}/applyChange.py",
+            f"--repoPath",
+            f"{repo_topdir}/podman/{dir}",
+            f"--appendPath",
+            f"{PodmanDir}/{dir}",
+            f"--systemctl",
+            f"bp",
+        ],
+        env=env,
+    )
 
     # copy multiple files for certbot
 
