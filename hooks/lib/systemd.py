@@ -3,39 +3,17 @@ import subprocess
 import configparser
 import getpass
 from pathlib import Path
+from collections import defaultdict
 
 
 class sysemctlCommand:
     def __init__(self):
-        self.containers = []
-        self.pods = []
-        self.kubes = []
-        self.networks = []
-        self.volumes = []
-        self.builds = []
-        self.images = []
-        self.artifacts = []
-        self.unknowns = []
+        self.quadlet_files = defaultdict(list)
+        self.ext_lists = unitFile.quadlet_ext
 
     def setService(self, ext, serviceName):
-        if ext == "container":
-            self.containers.append(serviceName)
-        elif ext == "pod":
-            self.pods.append(serviceName)
-        elif ext == "kube":
-            self.kubes.append(serviceName)
-        elif ext == "network":
-            self.networks.append(serviceName)
-        elif ext == "volume":
-            self.volumes.append(serviceName)
-        elif ext == "build":
-            self.builds.append(serviceName)
-        elif ext == "image":
-            self.images.append(serviceName)
-        elif ext == "artifact":
-            self.artifacts.append(serviceName)
-        else:
-            self.unknowns.append(serviceName)
+        self.quadlet_files[ext].append(serviceName)
+        if ext not in self.ext_lists:
             print(f"unknown extension: {ext} for service {serviceName}")
 
     def getCommand(self, command: list):
@@ -61,15 +39,15 @@ class sysemctlCommand:
         subprocess.run(self.getCommand(["restart", buildName]))
 
     def startAllPods(self):
-        for podName in self.pods:
+        for podName in self.quadlet_files["pod"]:
             self.startPod(podName)
 
     def startAllContainers(self):
-        for containerName in self.containers:
+        for containerName in self.quadlet_files["container"]:
             self.startContainer(containerName)
 
     def startAllBuilds(self):
-        for buildName in self.builds:
+        for buildName in self.quadlet_files["build"]:
             self.startBuild(buildName)
 
 
@@ -112,6 +90,18 @@ class unitFile:
             ServiceFile.write(f"# Added by podman file post-sync hook\n")
             with open(appendFile, "r") as appendFile:
                 for line in appendFile:
+                    ServiceFile.write(line)
+
+    def deleteDefaultParams(self, param: str):
+        print(f"Deleting params {param} from {self.path}")
+        if not param:
+            return
+        print(f"params to delete: {param}")
+        with open(self.path, "r") as ServiceFile:
+            lines = ServiceFile.readlines()
+        with open(self.path, "w") as ServiceFile:
+            for line in lines:
+                if param not in line:
                     ServiceFile.write(line)
 
     def changeWorkingDirectoryInBuildService(self, dirPath):
