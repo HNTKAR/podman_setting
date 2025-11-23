@@ -1,2 +1,3 @@
 [Container]
 Mount=type=bind,source=/mnt/MainHDD,destination=/HDD
+Mount=type=volume,source=certificate.volume,destination=/etc/letsencrypt,ro=true

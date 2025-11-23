@@ -31,37 +31,7 @@ def main(repo_topdir=None, **kwargs):
     env = os.environ.copy()
     env["PYTHONPATH"] = f"{HookDir}:{env.get("PYTHONPATH", "")}"
 
-    # copy multiple files for file-pod
-
-    dir = "file"
-    containers = ["samba", "nginx"]
-    filename_lists = [
-        ["smb-include.conf"],
-        # ["h-sample_3birds_uk.conf", "s-test.conf"],
-        [],
-    ]
-    for container, filenames in zip(containers, filename_lists):
-        copy_for_pod(filenames, dir, container, repo_topdir, PodmanDir)
-
-    subprocess.run(
-        [
-            "python3",
-            f"{HookDir}/applyChange.py",
-            f"--repoPath",
-            f"{repo_topdir}/podman/{dir}",
-            f"--appendPath",
-            f"{PodmanDir}/{dir}",
-            f"--delete-param-from-quadlet",
-            f"pod",
-            f"8080",
-            f"--systemctl",
-            f"bp",
-        ],
-        env=env,
-    )
-
     # copy multiple files for certbot
-
     dir = "certbot"
     filenames = []
     copy_for_container(filenames, dir, repo_topdir, PodmanDir)
@@ -75,6 +45,34 @@ def main(repo_topdir=None, **kwargs):
             f"{PodmanDir}/{dir}",
             f"--systemctl",
             f"bc",
+        ],
+        env=env,
+    )
+
+    # copy multiple files for file-pod
+    dir = "file"
+    containers = ["samba", "nginx"]
+    filename_lists = [
+        ["smb-include.conf"],
+        ["h-sample_3birds_uk.conf", "m-hdd.conf"],
+        # ["s-hdd.conf"],
+    ]
+    for container, filenames in zip(containers, filename_lists):
+        copy_for_pod(filenames, dir, container, repo_topdir, PodmanDir)
+
+    subprocess.run(
+        [
+            "python3",
+            f"{HookDir}/applyChange.py",
+            f"--repoPath",
+            f"{repo_topdir}/podman/{dir}",
+            f"--appendPath",
+            f"{PodmanDir}/{dir}",
+            # f"--delete-param-from-quadlet",
+            # f"pod",
+            # f"8080",
+            f"--systemctl",
+            f"bp",
         ],
         env=env,
     )
