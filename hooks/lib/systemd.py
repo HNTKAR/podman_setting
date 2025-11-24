@@ -64,16 +64,17 @@ class unitFile:
     ]
 
     def __init__(self, path: Path):
-        cf = configparser.ConfigParser(strict=False)
-        cf.read(path)
 
         self.path = path
         self.ext = os.path.splitext(self.path)[-1][1:]
-        if self.ext in self.quadlet_ext:
-            self.serviceType = cf.get(self.ext.capitalize(), "ServiceName")
 
     def getServiceType(self):
-        return self.serviceType
+        cf = configparser.ConfigParser(strict=False)
+        cf.read(self.path)
+        ret=""
+        if self.ext in self.quadlet_ext:
+            ret= cf.get(self.ext.capitalize(), "ServiceName")
+        return ret
 
     def getPath(self):
         return self.path
@@ -81,22 +82,18 @@ class unitFile:
     def getExt(self):
         return self.ext
 
-    def appendPersonalChanges(self, appendFile):
-        if not os.path.exists(appendFile):
-            print(f"append file {appendFile} not found, skipping...")
-            return
-        with open(self.path, "a") as ServiceFile:
+    def appendPersonalChanges(self, targetFile):
+        with open(targetFile, "a") as ServiceFile:
             ServiceFile.write(f"\n")
             ServiceFile.write(f"# Added by podman file post-sync hook\n")
-            with open(appendFile, "r") as appendFile:
+            with open(self.path, "r") as appendFile:
                 for line in appendFile:
                     ServiceFile.write(line)
 
     def deleteDefaultParams(self, param: str):
-        print(f"Deleting params {param} from {self.path}")
         if not param:
             return
-        print(f"params to delete: {param}")
+        print(f"Deleting param {param} from {self.path}")
         with open(self.path, "r") as ServiceFile:
             lines = ServiceFile.readlines()
         with open(self.path, "w") as ServiceFile:

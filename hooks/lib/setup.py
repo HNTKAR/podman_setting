@@ -37,7 +37,7 @@ class setup(sysemctlCommand):
         path = self.dManager.getTargetDir()
         return list(Path(path).rglob("Systemd/*"))
 
-    def modifySystemdFiles(self, sFiles: list[Path], appendPath: Path):
+    def modifySystemdFiles(self, sFiles: list[Path], appendFileDir: Path):
         """
         systemdユニットファイルに対して、ユーザ/環境ごとの追記を行います。
 
@@ -45,23 +45,34 @@ class setup(sysemctlCommand):
             sFiles (list[Path]): systemdディレクトリにあるユニットファイルを表すPathのリスト。
             appendPath (Path): 追記元ファイルが格納されたベースパス。<appendPath>/Systemd/<unit> を参照します。
         """
+        if not appendFileDir.exists():
+            print(f"append dir {appendFileDir} not found, skipping...")
+            return
         for sFile in sFiles:
             # systemdに登録
             f = unitFile(sFile)
-            f.appendPersonalChanges(appendPath.resolve() / "Systemd" / sFile.name)
+            f.appendPersonalChanges(appendFileDir.resolve() / sFile.name)
 
-    def modifyQuadletFiles(self, qFiles: list[Path], appendPath: Path):
+    def modifyQuadletFiles(self, qFiles: list[Path], appendFileDir: Path):
         """
         Quadletユニットファイルに対して、ユーザ/環境ごとの追記を行います。
         Returns:
             qFiles (list[Path]): Quadletディレクトリにあるユニットファイルを表すPathのリスト。
-            appendPath (Path): 追記元ファイルが格納されたベースパス。<appendPath>/Quadlet/<unit> を参照します。
+            appendPath (Path): 追記元ファイルが格納されたベースパス。<appendPath>/<unit> を参照します。
         """
+        if not appendFileDir.exists():
+            print(f"append dir {appendFileDir} not found, skipping...")
+            return
+        for appendFile in appendFileDir.iterdir():
+            f = unitFile(appendFile)
+            targetFile = self.dManager.getQuadletDir() / appendFile.name
+            f.appendPersonalChanges(targetFile)
+            if not targetFile.exists():
+                qFiles.append(targetFile)
         for qFile in qFiles:
             f = unitFile(qFile)
             if f.getExt() == "build":
                 f.changeWorkingDirectoryInBuildService(self.dManager.getTargetDir())
-            f.appendPersonalChanges(appendPath.resolve() / "Quadlet" / qFile.name)
 
     def updateUnitFileLists(self, qFiles: list[Path]):
         """
@@ -71,7 +82,7 @@ class setup(sysemctlCommand):
         """
         for qFile in qFiles:
             f = unitFile(qFile)
-            self.setService(f.ext, f.serviceType)
+            self.setService(f.getExt(), f.getServiceType())
 
     def copyQuadletFile(self, qFiles: list[Path], copiedFiles: list[Path]):
         """
@@ -111,9 +122,9 @@ class setup(sysemctlCommand):
         quadletFiles = self.searchQuadletFiles()
         copiedFiles: list[Path] = []
         self.copyQuadletFile(quadletFiles, copiedFiles)
-        self.updateUnitFileLists(copiedFiles)
-        self.modifyQuadletFiles(copiedFiles, appendPath)
+        self.modifyQuadletFiles(copiedFiles, appendPath / "Quadlet")
         self.deleteDefalutParams(copiedFiles, deleteParamsFromQuadlet)
+        self.updateUnitFileLists(copiedFiles)
 
     def setupSystemdFiles(
         self, appendPath: Path, deleteParamsFromSystemd: list[list[str]]
@@ -127,12 +138,10 @@ class setup(sysemctlCommand):
         systemdFiles = self.searchSystemdFiles()
         copiedFiles: list[Path] = []
         self.copySystemdFile(systemdFiles, copiedFiles)
-        self.modifySystemdFiles(copiedFiles, appendPath)
+        self.modifySystemdFiles(copiedFiles, appendPath / "Systemd")
         self.deleteDefalutParams(copiedFiles, deleteParamsFromSystemd)
 
-    def deleteDefalutParams(
-        self, qFiles, deleteParams: list[list[str]]
-    ):
+    def deleteDefalutParams(self, qFiles, deleteParams: list[list[str]]):
         """
         ユニットファイルから指定されたパラメータを削除します。
         Args:
