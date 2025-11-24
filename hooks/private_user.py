@@ -55,7 +55,6 @@ def main(repo_topdir=None, **kwargs):
     filename_lists = [
         ["smb-include.conf"],
         ["h-sample_3birds_uk.conf", "m-hdd.conf"],
-        # ["s-hdd.conf"],
     ]
     for container, filenames in zip(containers, filename_lists):
         copy_for_pod(filenames, dir, container, repo_topdir, PodmanDir)
@@ -68,9 +67,12 @@ def main(repo_topdir=None, **kwargs):
             f"{repo_topdir}/podman/{dir}",
             f"--appendPath",
             f"{PodmanDir}/{dir}",
-            # f"--delete-param-from-quadlet",
-            # f"pod",
-            # f"8080",
+            f"--delete-param-from-quadlet",
+            f"pod",
+            f"8080",
+            f"--delete-param-from-quadlet",
+            f"pod",
+            f"8443",
             f"--systemctl",
             f"bp",
         ],

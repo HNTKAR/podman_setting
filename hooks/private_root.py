@@ -34,14 +34,11 @@ def main(repo_topdir=None, **kwargs):
     
     # copy multiple files for vpn-pod
 
-    filenames = []
     dir="vpn"
-    container="wireguard"
-    for filename in filenames:
-        shutil.copyfile(
-            f"{PodmanDir}/{dir}/{filename}",
-            f"{repo_topdir}/podman/{dir}/{container}/config/{filename}",
-        )
+    containers=["wireguard"]
+    filenames_lists = []
+    for container ,filenames in zip(containers, filenames_lists):
+        copy_for_pod(filenames, dir, container, repo_topdir, PodmanDir)
     subprocess.run(
         [
             "sudo", 
@@ -56,6 +53,22 @@ def main(repo_topdir=None, **kwargs):
         ],
         env=env,
     )
+    
+def copy_for_pod(filenames, dir, container, repo_topdir, PodmanDir):
+    """
+    指定されたPod用の設定ファイルをコピーします。
+    Args:
+        filenames: コピーするファイル名のリスト。
+        dir: ファイルが存在するディレクトリ。
+        container: コンテナ名。
+        repo_topdir: リポジトリ作業領域のトップレベルディレクトリへの絶対パス。
+        PodmanDir: podman構成の基底ディレクトリ。
+    """
+    for filename in filenames:
+        shutil.copyfile(
+            f"{PodmanDir}/{dir}/{filename}",
+            f"{repo_topdir}/podman/{dir}/{container}/config/{filename}",
+        )
     
 if __name__ == "__main__":
     main(sys.argv[1])
